@@ -68,7 +68,7 @@
 
             <section class="panel active" id="panel-send" role="tabpanel">
               <div class="panel-layout">
-                <form id="send-form" class="screen-card form-stack send-form" novalidate>
+                <form id="send-form" class="screen-card form-stack send-form" novalidate autocomplete="off">
                   <div class="section-head">
                     <div>
                         <p class="micro-label" data-i18n="send.micro">ENVIO</p>
@@ -97,7 +97,7 @@
 
                   <label class="field field-wide recipients-field" id="tour-recipients">
                     <span data-i18n="send.recipients">Destinatarios</span>
-                    <textarea id="recipients" name="recipients" rows="5" data-i18n-placeholder="send.recipientsPlaceholder" placeholder="Aqui van los correos a los que quieres escribir&#10;uno@correo.com&#10;dos@correo.com"></textarea>
+                    <textarea id="recipients" name="recipients" rows="5" autocomplete="off" spellcheck="false" data-i18n-placeholder="send.recipientsPlaceholder" placeholder="Aqui van los correos a los que quieres escribir&#10;uno@correo.com&#10;dos@correo.com"></textarea>
                     <div class="field-meta">
                       <small id="recipient-count" data-i18n="send.recipientCountDefault">0 destinatarios validos</small>
                       <small id="pace-preview" data-i18n="send.paceDefault">Sin cadencia definida</small>
@@ -106,7 +106,7 @@
 
                   <label class="field field-wide subject-field" id="tour-subject">
                     <span data-i18n="send.subject">Asunto</span>
-                    <input id="subject" name="subject" type="text" data-i18n-placeholder="send.subjectPlaceholder" placeholder="Aqui va el asunto que vera la otra persona">
+                    <input id="subject" name="subject" type="text" autocomplete="off" spellcheck="false" data-i18n-placeholder="send.subjectPlaceholder" placeholder="Aqui va el asunto que vera la otra persona">
                   </label>
 
                   <div class="field-row field-row-compact cadence-row" id="tour-cadence">
@@ -172,7 +172,7 @@
 
                   <label class="field field-wide body-field">
                     <span data-i18n="send.body">Cuerpo del correo</span>
-                    <textarea id="body" name="body" rows="7" data-i18n-placeholder="send.bodyPlaceholder" placeholder="Aqui va el mensaje que quieres mandar."></textarea>
+                    <textarea id="body" name="body" rows="7" autocomplete="off" spellcheck="false" data-i18n-placeholder="send.bodyPlaceholder" placeholder="Aqui va el mensaje que quieres mandar."></textarea>
                   </label>
 
                   <div class="field field-wide attachments-field">
@@ -220,7 +220,7 @@
 
             <section class="panel" id="panel-config" role="tabpanel">
               <div class="panel-layout panel-layout-config">
-                <form id="config-form" class="screen-card form-stack" novalidate>
+                <form id="config-form" class="screen-card form-stack" novalidate autocomplete="off">
                   <div class="section-head">
                     <div>
                         <p class="micro-label" data-i18n="config.micro">CONFIG</p>
@@ -260,32 +260,32 @@
                   <div class="field-row">
                     <label class="field">
                       <span data-i18n="config.fromName">Nombre remitente</span>
-                      <input id="fromName" name="fromName" type="text" data-i18n-placeholder="config.fromNamePlaceholder" placeholder="Aqui va el nombre que quieres mostrar">
+                      <input id="fromName" name="fromName" type="text" autocomplete="off" spellcheck="false" data-i18n-placeholder="config.fromNamePlaceholder" placeholder="Aqui va el nombre que quieres mostrar">
                     </label>
 
                     <label class="field">
                       <span id="from-email-label" data-i18n="config.fromEmail">Correo saliente</span>
-                      <input id="fromEmail" name="fromEmail" type="email" data-i18n-placeholder="config.fromEmailPlaceholder" placeholder="Aqui va el correo desde el que quieres enviar">
+                      <input id="fromEmail" name="fromEmail" type="email" autocomplete="off" spellcheck="false" data-i18n-placeholder="config.fromEmailPlaceholder" placeholder="Aqui va el correo desde el que quieres enviar">
                     </label>
                   </div>
 
                   <div class="field-row" id="auth-row">
                     <label class="field" id="user-field">
                       <span data-i18n="config.user">Usuario</span>
-                      <input id="user" name="user" type="text" data-i18n-placeholder="config.userPlaceholder" placeholder="Aqui va tu usuario o tu correo">
+                      <input id="user" name="user" type="text" autocomplete="off" spellcheck="false" data-i18n-placeholder="config.userPlaceholder" placeholder="Aqui va tu usuario o tu correo">
                     </label>
 
                     <label class="field">
                       <span id="secret-label" data-i18n="config.secret">Clave</span>
-                      <input id="secret" name="secret" type="password" data-i18n-placeholder="config.secretPlaceholder" placeholder="Si no la vas a cambiar, dejalo vacio">
-                      <small id="secret-hint" data-i18n="config.secretMissing">Sin clave guardada.</small>
+                      <input id="secret" name="secret" type="password" autocomplete="new-password" spellcheck="false" data-i18n-placeholder="config.secretPlaceholder" placeholder="Si no la vas a cambiar, dejalo vacio">
+                      <small id="secret-hint" data-i18n="config.secretMissing">Nada guardado. Si recargas, se limpia.</small>
                     </label>
                   </div>
 
                   <div class="field-row field-row-compact" id="network-row">
                     <label class="field">
                       <span data-i18n="config.host">Host SMTP</span>
-                      <input id="host" name="host" type="text" data-i18n-placeholder="config.hostPlaceholder" placeholder="Aqui va el servidor SMTP, por ejemplo smtp.tudominio.com">
+                      <input id="host" name="host" type="text" autocomplete="off" spellcheck="false" data-i18n-placeholder="config.hostPlaceholder" placeholder="Aqui va el servidor SMTP, por ejemplo smtp.tudominio.com">
                     </label>
 
                     <label class="field">

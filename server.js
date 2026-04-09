@@ -8,7 +8,6 @@ const fs = require("fs/promises");
 const app = express();
 const PORT = Number.parseInt(process.env.PORT || "3000", 10);
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "storage");
-const CONFIG_FILE = path.join(DATA_DIR, "config.json");
 const UPLOAD_DIR = path.join(DATA_DIR, "uploads");
 
 const CONNECTION_MODES = [
@@ -144,9 +143,21 @@ const upload = multer({
 let campaign = emptyCampaign();
 let campaignTimer = null;
 
+app.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+  etag: false,
+  lastModified: false,
+  maxAge: 0
+}));
 
 app.get("/api/meta", (_req, res) => {
   res.json({
@@ -174,8 +185,7 @@ app.get("/api/config", async (_req, res, next) => {
 app.post("/api/config", async (req, res, next) => {
   try {
     const nextConfig = buildConfigPayload(req.body, await readConfig());
-    await saveConfig(nextConfig);
-    res.json({ ok: true, message: "Configuracion guardada.", config: stripSecret(nextConfig) });
+    res.json({ ok: true, message: "Configuracion lista para esta pestana.", config: stripSecret(nextConfig) });
   } catch (error) {
     next(error);
   }
@@ -192,7 +202,10 @@ app.post("/api/config/test", async (req, res, next) => {
   }
 });
 
-app.get("/api/campaign", (_req, res) => {
+app.get("/api/campaign", (req, res) => {
+  if (req.get("x-reset-view") === "1" && !isActive() && campaign.status !== "idle") {
+    campaign = emptyCampaign();
+  }
   res.json(publicCampaign());
 });
 
@@ -201,7 +214,7 @@ app.post("/api/campaign", upload.array("attachments", 5), async (req, res, next)
     if (isActive()) {
       return res.status(409).json({ ok: false, message: "Ya hay una cola activa. Detenla o espera a que termine." });
     }
-    const config = await readConfig();
+    const config = buildConfigPayload(req.body, await readConfig());
     const nextCampaign = buildCampaignPayload(req.body, config);
     const { transporter } = createTransport(config);
     await transporter.verify();
@@ -262,25 +275,10 @@ bootstrap().then(() => {
 async function bootstrap() {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  try {
-    await fs.access(CONFIG_FILE);
-  } catch (_error) {
-    await saveConfig(DEFAULT_CONFIG);
-  }
 }
 
 async function readConfig() {
-  try {
-    const raw = JSON.parse(await fs.readFile(CONFIG_FILE, "utf8"));
-    if (raw.connectionMode) {
-      const profile = resolveProfile(raw.connectionMode, raw.providerKey, raw);
-      return { ...DEFAULT_CONFIG, ...raw, host: profile.host, port: profile.port, tlsMode: profile.tlsMode, providerKey: profile.providerKey };
-    }
-    const mode = raw.mode === "google_app_password" ? "gmail_app_password" : (raw.provider === "custom" ? "smtp_custom" : "smtp_preset");
-    return readConfigCompat({ ...raw, connectionMode: mode, providerKey: raw.provider || "gmail", tlsMode: raw.secure ? "ssl" : "starttls" });
-  } catch (_error) {
-    return { ...DEFAULT_CONFIG };
-  }
+  return { ...DEFAULT_CONFIG };
 }
 
 function readConfigCompat(raw) {
@@ -302,7 +300,7 @@ function readConfigCompat(raw) {
 }
 
 async function saveConfig(config) {
-  await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
+  return config;
 }
 
 function buildConfigPayload(input, current) {
@@ -437,7 +435,6 @@ function validateGuardrails(total, batchSize, intervalSeconds, windowSeconds, av
   if (batchSize > rules.batchMax) throw new Error(`Con ${profile.label}, la app limita el lote a ${rules.batchMax} correos.`);
   if (intervalSeconds < rules.minIntervalSeconds) throw new Error(`Con ${profile.label}, el intervalo minimo es ${humanizeSeconds(rules.minIntervalSeconds)}.`);
   if (averagePerMinute > rules.maxAveragePerMinute) throw new Error(`Con ${profile.label}, la app limita el promedio a ${rules.maxAveragePerMinute} correos por minuto.`);
-  if (total > rules.dailyCap) throw new Error(`Con ${profile.label}, la app no permite mas de ${rules.dailyCap} correos en una sola cola.`);
   if (plannedMessages > rules.dailyCap) throw new Error(`Con ${profile.label}, esa ventana supera el tope de ${rules.dailyCap} correos.`);
 }
 
@@ -489,6 +486,7 @@ function publicCampaign() {
     recentFailed: campaign.failed.slice(-6),
     recentSent: campaign.sent.slice(-6),
     lastActivityAt: campaign.lastActivityAt,
+    activeOutput: campaign.configSnapshot ? stripSecret(campaign.configSnapshot) : null,
     schedulePreview: buildSchedulePreview(),
     logs: campaign.logs.slice(-8)
   };
@@ -545,7 +543,7 @@ async function runCampaign(id) {
   campaign.startedAt = campaign.startedAt || now();
   campaign.nextRunAt = null;
   campaign.currentBatch = { number: batchNumber, cycle: campaign.cycleNumber, size: batchRecipients.length, startedAt: now(), recipients: batchRecipients };
-  pushLogs(campaign, [`Ventana ${campaign.cycleNumber} · lote ${batchNumber} arrancando con ${batchRecipients.length} correos.`]);
+  pushLogs(campaign, [`Ventana ${campaign.cycleNumber} - lote ${batchNumber} arrancando con ${batchRecipients.length} correos.`]);
   const results = await sendBatch(batchRecipients);
   const successes = results.filter((item) => item.accepted);
   const failures = results.filter((item) => !item.accepted);
@@ -560,7 +558,7 @@ async function runCampaign(id) {
   campaign.lastActivityAt = results[results.length - 1]?.at || now();
   campaign.cycleBatchCount += 1;
   campaign.currentBatch = null;
-  pushLogs(campaign, [`Ventana ${campaign.cycleNumber} · lote ${batchNumber} terminado. OK ${successes.length}, fallo ${failures.length}.`]);
+  pushLogs(campaign, [`Ventana ${campaign.cycleNumber} - lote ${batchNumber} terminado. OK ${successes.length}, fallo ${failures.length}.`]);
   if (failures.length) {
     pushLogs(campaign, failures.slice(0, 3).map((item) => `Fallo para ${item.email}: ${summarizeSendError(item.error)}`));
   }

@@ -30,9 +30,12 @@ La app corre localmente, se conecta a tu propia salida y te deja controlar tanda
 - Permite definir `correos por tanda`, `cada cuanto`, `modo de envio`, `duracion de ventana` y `reinicio automatico`.
 - Acepta adjuntos PNG, JPG y PDF.
 - Muestra `Progreso`, `Agenda` y `Log` en vivo.
+- No guarda formularios ni credenciales al recargar la pagina.
 - Incluye selector `ES | EN`, onboarding y UI pixel-art.
 
 ## Capturas
+
+Todas las capturas del repo usan datos de prueba.
 
 ### Principal
 

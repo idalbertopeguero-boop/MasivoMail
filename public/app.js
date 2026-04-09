@@ -20,9 +20,6 @@ const state = {
 const SPRITE_WIDTH = 216;
 const SPRITE_HEIGHT = 96;
 const TOUR_AVATAR_SIZE = 88;
-const TOUR_STORAGE_KEY = "masivomail-tour-seen-v2";
-const LANG_STORAGE_KEY = "masivomail-lang";
-
 const I18N = {
   es: {
     "app.title": "MasivoMail | Correo por lotes",
@@ -112,7 +109,7 @@ const I18N = {
     "config.userPlaceholder": "Si tu servidor usa otro usuario, ponlo aqui",
     "config.secret": "Clave",
     "config.secretPlaceholder": "Pega aqui la clave; si Google la muestra con espacios, da igual",
-    "config.secretMissing": "Sin clave guardada.",
+    "config.secretMissing": "Nada guardado. Si recargas, se limpia.",
     "config.host": "Host SMTP",
     "config.hostPlaceholder": "Aqui va el servidor SMTP, por ejemplo smtp.tudominio.com",
     "config.port": "Puerto",
@@ -130,10 +127,10 @@ const I18N = {
     "feedback.waiting": "Esperando acciones.",
     "feedback.ready": "Interfaz lista para trabajar.",
     "feedback.readMetaError": "No se pudo leer la configuracion base de la app.",
-    "feedback.readConfigError": "No se pudo leer la configuracion guardada.",
+    "feedback.readConfigError": "No se pudo preparar la configuracion base.",
     "feedback.savingConfig": "Guardando configuracion...",
     "feedback.saveConfigError": "No se pudo guardar la configuracion.",
-    "feedback.saveConfigOk": "Configuracion guardada correctamente.",
+    "feedback.saveConfigOk": "Configuracion lista solo para esta pestana.",
     "feedback.testingConfig": "Probando conexion...",
     "feedback.testConfigError": "La prueba de conexion fallo.",
     "feedback.testConfigOk": "Conexion correcta. Ya puedes usar esta salida.",
@@ -143,7 +140,7 @@ const I18N = {
     "feedback.stoppingCampaign": "Deteniendo cola...",
     "feedback.stopCampaignError": "No se pudo detener la cola.",
     "feedback.stopCampaignOk": "Cola detenida.",
-    "config.secretStored": "Ya hay una clave guardada. Solo escribe una nueva si quieres reemplazarla.",
+    "config.secretStored": "La clave solo vive en esta pestana. Si recargas, se limpia.",
     "config.secretLabelGmail": "Clave app",
     "config.secretLabelDefault": "Clave",
     "config.manual": "Manual",
@@ -159,8 +156,8 @@ const I18N = {
     "recipients.validOnly": "{valid} destinatarios validos",
     "recipients.withInvalid": "{valid} validos / {invalid} invalidos",
     "attachments.none": "Sin adjuntos",
-    "pace.preview": "{batch} por tanda | {average}/min | {cycles} tandas aprox.",
-    "pace.windowPlan": "{batches} tandas | {messages} correos/ventana",
+    "pace.preview": "{batch} por tanda | cada {interval} | {batches} tandas en {window}",
+    "pace.windowPlan": "{messages} correos/ventana | {recipients} destinatarios",
     "timing.currentBatch": "Tanda {number} en curso con {size} correos.",
     "timing.nextRun": "Siguiente tanda: {time}.",
     "timing.windowEnds": "Ventana {cycle} hasta {time}.",
@@ -290,7 +287,7 @@ const I18N = {
     "config.userPlaceholder": "If your server uses a different user, put it here",
     "config.secret": "Secret",
     "config.secretPlaceholder": "Paste the key here; if Google shows spaces, that is fine",
-    "config.secretMissing": "No saved secret.",
+    "config.secretMissing": "Nothing is saved. Refreshing clears it.",
     "config.host": "SMTP host",
     "config.hostPlaceholder": "Put the SMTP server here, for example smtp.yourdomain.com",
     "config.port": "Port",
@@ -308,10 +305,10 @@ const I18N = {
     "feedback.waiting": "Waiting for actions.",
     "feedback.ready": "Interface ready to work.",
     "feedback.readMetaError": "Could not read the app baseline configuration.",
-    "feedback.readConfigError": "Could not read the saved configuration.",
+    "feedback.readConfigError": "Could not prepare the base configuration.",
     "feedback.savingConfig": "Saving configuration...",
     "feedback.saveConfigError": "Could not save the configuration.",
-    "feedback.saveConfigOk": "Configuration saved successfully.",
+    "feedback.saveConfigOk": "Configuration is ready only for this tab.",
     "feedback.testingConfig": "Testing connection...",
     "feedback.testConfigError": "Connection test failed.",
     "feedback.testConfigOk": "Connection is valid. You can use this setup now.",
@@ -321,7 +318,7 @@ const I18N = {
     "feedback.stoppingCampaign": "Stopping queue...",
     "feedback.stopCampaignError": "Could not stop the queue.",
     "feedback.stopCampaignOk": "Queue stopped.",
-    "config.secretStored": "A secret is already saved. Only enter a new one if you want to replace it.",
+    "config.secretStored": "The secret only lives in this tab. Refreshing clears it.",
     "config.secretLabelGmail": "App key",
     "config.secretLabelDefault": "Secret",
     "config.manual": "Manual",
@@ -337,8 +334,8 @@ const I18N = {
     "recipients.validOnly": "{valid} valid recipients",
     "recipients.withInvalid": "{valid} valid / {invalid} invalid",
     "attachments.none": "No attachments",
-    "pace.preview": "{batch} per batch | {average}/min | about {cycles} rounds",
-    "pace.windowPlan": "{batches} batches | {messages} emails/window",
+    "pace.preview": "{batch} per batch | every {interval} | {batches} batches in {window}",
+    "pace.windowPlan": "{messages} emails/window | {recipients} recipients",
     "timing.currentBatch": "Batch {number} is running with {size} emails.",
     "timing.nextRun": "Next batch: {time}.",
     "timing.windowEnds": "Window {cycle} until {time}.",
@@ -651,12 +648,14 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   bindUi();
   handleHashPanel();
-  setLanguage(window.localStorage.getItem(LANG_STORAGE_KEY) || "es", false);
+  setLanguage("es", false);
 
   try {
     await loadMeta();
+    resetUiForms();
     await loadConfig();
-    await refreshCampaign();
+    await refreshCampaign(true);
+    applyDemoPreset();
     renderRecipientCount();
     renderAttachmentCount();
     renderPacePreview();
@@ -693,6 +692,14 @@ function bindUi() {
   window.addEventListener("hashchange", handleHashPanel);
   window.addEventListener("resize", handleViewportMove);
   window.addEventListener("scroll", handleViewportMove, { passive: true });
+}
+
+async function apiFetch(url, options = {}) {
+  const nextOptions = {
+    cache: "no-store",
+    ...options
+  };
+  return fetch(url, nextOptions);
 }
 
 function t(key, vars = {}) {
@@ -757,10 +764,6 @@ function renderProviderOptions() {
 function setLanguage(lang, persist = true) {
   state.lang = I18N[lang] ? lang : "es";
 
-  if (persist) {
-    window.localStorage.setItem(LANG_STORAGE_KEY, state.lang);
-  }
-
   el.langButtons.forEach((button) => button.classList.toggle("active", button.dataset.lang === state.lang));
   applyStaticTranslations();
   renderProviderOptions();
@@ -817,8 +820,75 @@ function handleHashPanel() {
   });
 }
 
+function blankConfig() {
+  return {
+    connectionMode: "gmail_app_password",
+    providerKey: "gmail",
+    host: state.meta?.gmailAppProfile?.host || "smtp.gmail.com",
+    port: state.meta?.gmailAppProfile?.port || 465,
+    tlsMode: state.meta?.gmailAppProfile?.tlsMode || "ssl",
+    user: "",
+    fromName: "",
+    fromEmail: "",
+    hasSecret: false
+  };
+}
+
+function resetUiForms() {
+  el.sendForm.reset();
+  el.configForm.reset();
+  el.attachments.value = "";
+  el.connectionMode.value = "gmail_app_password";
+  renderProviderOptions();
+  fillConfigForm(blankConfig());
+  state.config = blankConfig();
+  renderConfigSummary(state.config);
+  renderStatus(state.config);
+  renderAttachmentCount();
+  renderRecipientCount();
+}
+
+function applyDemoPreset() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("demo") !== "1") {
+    return;
+  }
+
+  const demoConfig = {
+    connectionMode: "gmail_app_password",
+    providerKey: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    tlsMode: "ssl",
+    user: "demo.pixel.mail@gmail.com",
+    fromName: "Equipo Pixel Demo",
+    fromEmail: "demo.pixel.mail@gmail.com",
+    hasSecret: false
+  };
+
+  state.config = demoConfig;
+  fillConfigForm(demoConfig);
+  renderConfigSummary(demoConfig);
+  renderStatus(demoConfig);
+
+  el.recipients.value = "soporte@empresa-demo.com\nreclamos@empresa-demo.com";
+  el.subject.value = "Seguimiento demo de servicio";
+  el.batchSize.value = "10";
+  el.intervalValue.value = "4";
+  el.intervalUnit.value = "minutes";
+  el.deliveryMode.value = "burst";
+  el.windowValue.value = "2";
+  el.windowUnit.value = "hours";
+  el.repeatWindow.checked = false;
+  el.rampUp.checked = true;
+  el.body.value = "Hola,\n\nEste es un ejemplo visual de MasivoMail con datos de prueba.\n\nGracias.";
+  renderRecipientCount();
+  renderAttachmentCount();
+  renderPacePreview();
+}
+
 async function loadMeta() {
-  const response = await fetch("/api/meta");
+  const response = await apiFetch("/api/meta");
   const data = await response.json();
 
   if (!response.ok) {
@@ -830,7 +900,7 @@ async function loadMeta() {
 }
 
 async function loadConfig() {
-  const response = await fetch("/api/config");
+  const response = await apiFetch("/api/config");
   const data = await response.json();
 
   if (!response.ok) {
@@ -843,8 +913,10 @@ async function loadConfig() {
   renderStatus(data);
 }
 
-async function refreshCampaign() {
-  const response = await fetch("/api/campaign");
+async function refreshCampaign(resetView = false) {
+  const response = await apiFetch("/api/campaign", {
+    headers: resetView ? { "x-reset-view": "1" } : undefined
+  });
   const data = await response.json();
   state.campaign = data;
   renderCampaign(data);
@@ -869,13 +941,15 @@ function setMode(mode) {
   showRandomCameo();
 }
 
-function fillConfigForm(config) {
+function fillConfigForm(config, options = {}) {
   setMode(config.connectionMode);
   el.providerKey.value = config.providerKey || "gmail";
   el.fromName.value = config.fromName || "";
   el.fromEmail.value = config.fromEmail || "";
   el.user.value = config.user || "";
-  el.secret.value = "";
+  if (!options.preserveSecret) {
+    el.secret.value = "";
+  }
   el.secretHint.textContent = config.hasSecret ? t("config.secretStored") : t("config.secretMissing");
   renderProfilePreview(config);
 }
@@ -1002,7 +1076,6 @@ function renderPacePreview() {
     return;
   }
 
-  const average = Number(((batchSize * 60) / seconds).toFixed(2));
   const batches = Math.max(1, Math.floor(Math.max(windowSeconds - 1, 0) / Math.max(seconds, 1)) + 1);
   let messages = 0;
   for (let index = 1; index <= batches; index += 1) {
@@ -1014,10 +1087,13 @@ function renderPacePreview() {
       messages += batchSize;
     }
   }
+
+  const intervalLabel = intervalUnit === "seconds"
+    ? `${intervalValue} s`
+    : `${intervalValue} min`;
   const windowLabel = windowUnit === "minutes" ? `${windowValue}m` : `${windowValue}h`;
   const repeatLabel = repeatWindow ? (state.lang === "en" ? " | repeats" : " | reinicia") : "";
-  const recipientHint = total ? ` | ${total} ${state.lang === "en" ? "destinations" : "destinatarios"}` : "";
-  el.pacePreview.textContent = `${t("pace.preview", { batch: batchSize, average, cycles: batches })} | ${t("pace.windowPlan", { batches, messages })} | ${windowLabel}${repeatLabel}${recipientHint}`;
+  el.pacePreview.textContent = `${t("pace.preview", { batch: batchSize, interval: intervalLabel, batches, window: windowLabel })} | ${t("pace.windowPlan", { messages, recipients: total })}${repeatLabel}`;
 }
 
 async function saveConfig(event) {
@@ -1025,7 +1101,7 @@ async function saveConfig(event) {
   const payload = collectConfigPayload();
   setFeedback(t("feedback.savingConfig"), null);
 
-  const response = await fetch("/api/config", {
+  const response = await apiFetch("/api/config", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -1038,8 +1114,7 @@ async function saveConfig(event) {
   }
 
   state.config = data.config;
-  el.secret.value = "";
-  fillConfigForm(data.config);
+  fillConfigForm(data.config, { preserveSecret: true });
   renderConfigSummary(data.config);
   renderStatus(data.config);
   showRandomCameo();
@@ -1050,7 +1125,7 @@ async function testConfig() {
   const payload = collectConfigPayload();
   setFeedback(t("feedback.testingConfig"), null);
 
-  const response = await fetch("/api/config/test", {
+  const response = await apiFetch("/api/config/test", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -1069,12 +1144,16 @@ async function testConfig() {
 async function startCampaign(event) {
   event.preventDefault();
   const formData = new FormData(el.sendForm);
+  const configPayload = collectConfigPayload();
+  Object.entries(configPayload).forEach(([key, value]) => {
+    formData.set(key, value ?? "");
+  });
 
   el.startCampaign.disabled = true;
   setFeedback(t("feedback.startingCampaign"), null);
 
   try {
-    const response = await fetch("/api/campaign", { method: "POST", body: formData });
+    const response = await apiFetch("/api/campaign", { method: "POST", body: formData });
     const data = await response.json();
 
     if (!response.ok) {
@@ -1109,7 +1188,7 @@ async function stopCampaign() {
   try {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 15000);
-    const response = await fetch(`/api/campaign/${state.campaign.id}/stop`, { method: "POST", signal: controller.signal });
+    const response = await apiFetch(`/api/campaign/${state.campaign.id}/stop`, { method: "POST", signal: controller.signal });
     window.clearTimeout(timer);
     const data = await response.json();
 
@@ -1156,6 +1235,11 @@ function renderCampaign(data) {
   el.logBox.textContent = (logLines.length || failureLines.length)
     ? [...logLines, ...failureLines].join("\n")
     : t("log.none");
+
+  if (data.activeOutput) {
+    renderStatus(data.activeOutput);
+    renderGuardrails(localizeProfile(getSelectedProfile(data.activeOutput), data.activeOutput.connectionMode, data.activeOutput.providerKey));
+  }
 
   if (state.lastCampaignStatus !== data.status) {
     state.lastCampaignStatus = data.status;
@@ -1754,7 +1838,8 @@ function buildTourSteps() {
 }
 
 function maybeOpenTour() {
-  if (window.localStorage.getItem(TOUR_STORAGE_KEY)) {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("demo") === "1") {
     return;
   }
   setTimeout(() => openTour(0), 900);
@@ -1776,7 +1861,6 @@ function closeTour() {
   el.tourPanel.dataset.ready = "false";
   el.tourBeam.style.opacity = "0";
   clearTourFocus();
-  window.localStorage.setItem(TOUR_STORAGE_KEY, "1");
 }
 
 function nextTourStep() {
