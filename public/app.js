@@ -636,7 +636,7 @@ const el = {
   tourTitle: document.getElementById("tour-title"),
   tourBody: document.getElementById("tour-body"),
   tourPoints: document.getElementById("tour-points"),
-  tourProgress: document.getElementById("tour-progress"),
+  tourProgress: document.getElementById("tour-progress-steps"),
   tourPrev: document.getElementById("tour-prev"),
   tourNext: document.getElementById("tour-next"),
   tourSkip: document.getElementById("tour-skip"),
