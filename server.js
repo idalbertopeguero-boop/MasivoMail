@@ -390,7 +390,7 @@ function buildCampaignPayload(input, config) {
   if (!Number.isInteger(batchSize) || batchSize <= 0) throw new Error("El tamano del lote debe ser mayor que cero.");
   if (!Number.isInteger(intervalValue) || intervalValue <= 0) throw new Error("El intervalo debe ser mayor que cero.");
   if (!Number.isInteger(windowValue) || windowValue <= 0) throw new Error("La duracion de la ventana debe ser mayor que cero.");
-  validateGuardrails(recipients.valid.length, batchSize, intervalSeconds, windowSeconds, Number((batchSize * 60) / intervalSeconds), profile);
+  validateGuardrails(recipients.valid.length, batchSize, intervalSeconds, windowSeconds, Number(((batchSize * recipients.valid.length * 60) / intervalSeconds).toFixed(2)), profile);
   return {
     id: crypto.randomUUID(),
     status: "queued",
@@ -424,15 +424,17 @@ function buildCampaignPayload(input, config) {
   };
 }
 
-function validateGuardrails(total, batchSize, intervalSeconds, windowSeconds, averagePerMinute, profile) {
+function validateGuardrails(totalRecipients, batchSize, intervalSeconds, windowSeconds, averagePerMinute, profile) {
   const rules = profile.guardrails;
+  const batchTotal = messagesPerBatch(batchSize, totalRecipients);
   const plannedMessages = plannedMessagesForCycle({
+    recipientCount: totalRecipients,
     batchSize,
     intervalSeconds,
     windowSeconds,
     rampUp: false
   });
-  if (batchSize > rules.batchMax) throw new Error(`Con ${profile.label}, la app limita el lote a ${rules.batchMax} correos.`);
+  if (batchTotal > rules.batchMax) throw new Error(`Con ${profile.label}, ${batchSize} por destinatario y ${totalRecipients} destinatarios se vuelven ${batchTotal} correos por tanda, y el maximo es ${rules.batchMax}.`);
   if (intervalSeconds < rules.minIntervalSeconds) throw new Error(`Con ${profile.label}, el intervalo minimo es ${humanizeSeconds(rules.minIntervalSeconds)}.`);
   if (averagePerMinute > rules.maxAveragePerMinute) throw new Error(`Con ${profile.label}, la app limita el promedio a ${rules.maxAveragePerMinute} correos por minuto.`);
   if (plannedMessages > rules.dailyCap) throw new Error(`Con ${profile.label}, esa ventana supera el tope de ${rules.dailyCap} correos.`);
@@ -493,9 +495,10 @@ function publicCampaign() {
 }
 
 function summary() {
+  const recipientCount = campaign.recipients.length;
   const batchSize = campaign.options ? campaign.options.batchSize : 0;
   const plannedBatches = campaign.options ? plannedBatchesPerCycle(campaign.options) : 0;
-  const plannedMessages = campaign.options ? plannedMessagesForCycle(campaign.options) : 0;
+  const plannedMessages = campaign.options ? plannedMessagesForCycle({ ...campaign.options, recipientCount }) : 0;
   const cycleStartMs = campaign.cycleStartedAt ? Date.parse(campaign.cycleStartedAt) : 0;
   const cycleEndMs = campaign.cycleEndsAt ? Date.parse(campaign.cycleEndsAt) : 0;
   const windowProgressPercent = cycleStartMs && cycleEndMs
@@ -510,7 +513,7 @@ function summary() {
     failed,
     batchesDone: campaign.cycleBatchCount || 0,
     batchesTotal: plannedBatches,
-    averagePerMinute: campaign.options ? Number(((batchSize * 60) / campaign.options.intervalSeconds).toFixed(2)) : 0,
+    averagePerMinute: campaign.options ? Number((((batchSize * recipientCount) * 60) / campaign.options.intervalSeconds).toFixed(2)) : 0,
     cycleNumber: campaign.cycleNumber || 0,
     windowProgressPercent
   };
@@ -681,9 +684,10 @@ function buildBatchRecipients(size) {
   }
 
   const batch = [];
-  for (let index = 0; index < size; index += 1) {
-    batch.push(campaign.recipients[campaign.recipientCursor]);
-    campaign.recipientCursor = (campaign.recipientCursor + 1) % campaign.recipients.length;
+  for (const recipient of campaign.recipients) {
+    for (let index = 0; index < size; index += 1) {
+      batch.push(recipient);
+    }
   }
   return batch;
 }
@@ -746,9 +750,13 @@ function plannedMessagesForCycle(options) {
   let total = 0;
   const batches = plannedBatchesPerCycle(options);
   for (let index = 1; index <= batches; index += 1) {
-    total += batchSizeForCycleIndex(options, index);
+    total += messagesPerBatch(batchSizeForCycleIndex(options, index), options.recipientCount || 0);
   }
   return total;
+}
+
+function messagesPerBatch(perRecipientCount, recipientCount) {
+  return Math.max(0, perRecipientCount) * Math.max(0, recipientCount);
 }
 
 function splitRecipients(input) {

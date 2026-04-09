@@ -27,7 +27,8 @@ La app corre localmente, se conecta a tu propia salida y te deja controlar tanda
 
 - Corre localmente en Docker.
 - Soporta `Gmail key`, `SMTP guiado` y `SMTP manual`.
-- Permite definir `correos por tanda`, `cada cuanto`, `modo de envio`, `duracion de ventana` y `reinicio automatico`.
+- Permite definir `correos por destinatario`, `cada cuanto`, `modo de envio`, `duracion de ventana` y `reinicio automatico`.
+- Si pones `10` y hay `2` destinatarios, la tanda real sera de `20` correos: `10` para cada uno.
 - Acepta adjuntos PNG, JPG y PDF.
 - Muestra `Progreso`, `Agenda` y `Log` en vivo.
 - No guarda formularios ni credenciales al recargar la pagina.
@@ -45,7 +46,21 @@ Todas las capturas del repo usan datos de prueba.
 
 ![Pantalla de configuracion](docs/images/config.png)
 
-## Arranque en una linea
+## Clonar y levantar en una linea
+
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/idalbertopeguero-boop/MasivoMail.git; cd MasivoMail; docker compose up -d --build
+```
+
+### Linux o macOS
+
+```bash
+git clone https://github.com/idalbertopeguero-boop/MasivoMail.git && cd MasivoMail && docker compose up -d --build
+```
+
+## Si ya estas dentro del repo
 
 ```bash
 docker compose up -d --build
@@ -64,7 +79,7 @@ docker compose down
 1. En `Configuracion`, eliges el tipo de salida y pruebas la conexion.
 2. En `Principal`, pegas destinatarios, asunto, cuerpo y adjuntos.
 3. Ajustas el ritmo:
-   - correos por tanda
+   - correos por destinatario
    - intervalo en segundos, minutos u horas
    - envio `De golpe` o `Encolado`
    - cuanto dura la ventana

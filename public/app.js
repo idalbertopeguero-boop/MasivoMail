@@ -44,7 +44,7 @@ const I18N = {
     "send.paceDefault": "Sin cadencia definida",
     "send.subject": "Asunto",
     "send.subjectPlaceholder": "Aqui va el asunto que vera la otra persona",
-    "send.batchSize": "Correos por tanda",
+    "send.batchSize": "Correos por destinatario",
     "send.each": "Cada",
     "send.unit": "Unidad",
     "send.unitMinutes": "Minutos",
@@ -146,7 +146,7 @@ const I18N = {
     "config.manual": "Manual",
     "config.noUser": "sin usuario",
     "guardrail.copy": "Ritmo recomendado para {label}.",
-    "guardrail.batchMax": "Lote maximo: {value}",
+    "guardrail.batchMax": "Lote real maximo: {value}",
     "guardrail.minInterval": "Intervalo minimo: {value}",
     "guardrail.maxAverage": "Promedio maximo: {value}/min",
     "guardrail.dailyCap": "Tope por cola: {value}",
@@ -156,8 +156,8 @@ const I18N = {
     "recipients.validOnly": "{valid} destinatarios validos",
     "recipients.withInvalid": "{valid} validos / {invalid} invalidos",
     "attachments.none": "Sin adjuntos",
-    "pace.preview": "{batch} por tanda | cada {interval} | {batches} tandas en {window}",
-    "pace.windowPlan": "{messages} correos/ventana | {recipients} destinatarios",
+    "pace.preview": "{batch} por destinatario | {recipients} destinatarios | {batchTotal} por tanda real | cada {interval} | {batches} tandas en {window}",
+    "pace.windowPlan": "{messages} en la ventana",
     "timing.currentBatch": "Tanda {number} en curso con {size} correos.",
     "timing.nextRun": "Siguiente tanda: {time}.",
     "timing.windowEnds": "Ventana {cycle} hasta {time}.",
@@ -222,7 +222,7 @@ const I18N = {
     "send.paceDefault": "No cadence defined",
     "send.subject": "Subject",
     "send.subjectPlaceholder": "Put the subject the other person will see here",
-    "send.batchSize": "Emails per batch",
+    "send.batchSize": "Emails per recipient",
     "send.each": "Every",
     "send.unit": "Unit",
     "send.unitMinutes": "Minutes",
@@ -324,7 +324,7 @@ const I18N = {
     "config.manual": "Manual",
     "config.noUser": "no user",
     "guardrail.copy": "Recommended pace for {label}.",
-    "guardrail.batchMax": "Max batch: {value}",
+    "guardrail.batchMax": "Max real batch: {value}",
     "guardrail.minInterval": "Min interval: {value}",
     "guardrail.maxAverage": "Max average: {value}/min",
     "guardrail.dailyCap": "Queue cap: {value}",
@@ -334,8 +334,8 @@ const I18N = {
     "recipients.validOnly": "{valid} valid recipients",
     "recipients.withInvalid": "{valid} valid / {invalid} invalid",
     "attachments.none": "No attachments",
-    "pace.preview": "{batch} per batch | every {interval} | {batches} batches in {window}",
-    "pace.windowPlan": "{messages} emails/window | {recipients} recipients",
+    "pace.preview": "{batch} per recipient | {recipients} recipients | {batchTotal} in each real batch | every {interval} | {batches} batches in {window}",
+    "pace.windowPlan": "{messages} in the window",
     "timing.currentBatch": "Batch {number} is running with {size} emails.",
     "timing.nextRun": "Next batch: {time}.",
     "timing.windowEnds": "Window {cycle} until {time}.",
@@ -1079,21 +1079,22 @@ function renderPacePreview() {
   const batches = Math.max(1, Math.floor(Math.max(windowSeconds - 1, 0) / Math.max(seconds, 1)) + 1);
   let messages = 0;
   for (let index = 1; index <= batches; index += 1) {
-    if (el.rampUp.checked && index === 1) {
-      messages += Math.max(1, Math.ceil(batchSize * 0.5));
-    } else if (el.rampUp.checked && index === 2) {
-      messages += Math.max(1, Math.ceil(batchSize * 0.75));
-    } else {
-      messages += batchSize;
-    }
+    const perRecipientCount = (el.rampUp.checked && index === 1)
+      ? Math.max(1, Math.ceil(batchSize * 0.5))
+      : (el.rampUp.checked && index === 2)
+        ? Math.max(1, Math.ceil(batchSize * 0.75))
+        : batchSize;
+
+    messages += perRecipientCount * total;
   }
 
+  const batchTotal = batchSize * total;
   const intervalLabel = intervalUnit === "seconds"
     ? `${intervalValue} s`
     : `${intervalValue} min`;
   const windowLabel = windowUnit === "minutes" ? `${windowValue}m` : `${windowValue}h`;
   const repeatLabel = repeatWindow ? (state.lang === "en" ? " | repeats" : " | reinicia") : "";
-  el.pacePreview.textContent = `${t("pace.preview", { batch: batchSize, interval: intervalLabel, batches, window: windowLabel })} | ${t("pace.windowPlan", { messages, recipients: total })}${repeatLabel}`;
+  el.pacePreview.textContent = `${t("pace.preview", { batch: batchSize, recipients: total, batchTotal, interval: intervalLabel, batches, window: windowLabel })} | ${t("pace.windowPlan", { messages })}${repeatLabel}`;
 }
 
 async function saveConfig(event) {
