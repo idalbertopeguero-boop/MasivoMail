@@ -1,7 +1,7 @@
 {
   "name": "masivomail",
   "version": "1.0.0",
-  "description": "Terminal pixel-retro en Docker para enviar correos por tandas con Gmail o SMTP",
+  "description": "Terminal pixel-retro en Docker para enviar correos por tandas con Gmail o SMTP, con agenda y control de ventanas",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -1,38 +1,46 @@
 # MasivoMail
 
-Terminal pixel-retro en Docker para enviar correos por tandas desde tu propio Gmail o SMTP.
+<p align="center">
+  <strong>Terminal pixel-retro en Docker para enviar correos por tandas desde tu propio Gmail o SMTP.</strong>
+</p>
 
-MasivoMail nacio de una idea simple: hay veces en las que un solo correo no basta. Si te toca insistir, ordenar tandas, medir tiempos y mantener una salida visualmente clara, esta app lo hace desde una web local con estilo retro, sin depender de un SaaS externo.
+<p align="center">
+  <img alt="Docker ready" src="https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-20%2B-3C873A?style=for-the-badge&logo=node.js&logoColor=white">
+  <img alt="UI bilingue" src="https://img.shields.io/badge/UI-ES%20%7C%20EN-F28F45?style=for-the-badge">
+  <img alt="Public repo" src="https://img.shields.io/badge/GitHub-public-111827?style=for-the-badge&logo=github&logoColor=white">
+</p>
+
+<p align="center">
+  Sin SaaS, sin panel externo, sin configuraciones rebuscadas: escribes, marcas el ritmo y lanzas la cola.
+</p>
+
+![Vista principal de MasivoMail](docs/images/main.png)
+
+## Por que existe
+
+MasivoMail nacio de una idea simple: hay veces en las que un solo correo no basta, pero tampoco quieres abrir una plataforma pesada ni depender de un servicio externo para insistir.
+
+La app corre localmente, se conecta a tu propia salida y te deja controlar tandas, tiempos, ventanas y reinicios desde una web con estilo retro y una lectura visual clara.
+
+## Lo que trae
+
+- Corre localmente en Docker.
+- Soporta `Gmail key`, `SMTP guiado` y `SMTP manual`.
+- Permite definir `correos por tanda`, `cada cuanto`, `modo de envio`, `duracion de ventana` y `reinicio automatico`.
+- Acepta adjuntos PNG, JPG y PDF.
+- Muestra `Progreso`, `Agenda` y `Log` en vivo.
+- Incluye selector `ES | EN`, onboarding y UI pixel-art.
 
 ## Capturas
 
 ### Principal
 
-![Vista principal](docs/images/main.png)
+![Pantalla principal](docs/images/main.png)
 
 ### Configuracion
 
-![Vista de configuracion](docs/images/config.png)
-
-## Que hace
-
-- Corre localmente en Docker.
-- Permite salida por `Gmail key`, `SMTP guiado` y `SMTP manual`.
-- Deja definir `correos por tanda`, `intervalo`, `modo de envio`, `ventana de tiempo` y `reinicio automatico`.
-- Acepta adjuntos de imagen y PDF.
-- Muestra progreso, log y agenda de tandas.
-- Incluye selector `ES | EN`, onboarding y detalles visuales pixel-art.
-
-## Por que existe
-
-No intenta ser una herramienta corporativa ni una plataforma de marketing.
-
-La idea es mas directa:
-
-- escribir una vez
-- organizar envios por tandas
-- dejar visible cuando sale cada bloque
-- insistir desde tu propio correo sin perder el ritmo
+![Pantalla de configuracion](docs/images/config.png)
 
 ## Arranque en una linea
 
@@ -42,21 +50,35 @@ docker compose up -d --build
 
 Luego abre [http://localhost:3000](http://localhost:3000).
 
-Para apagar:
+Para apagarlo:
 
 ```bash
 docker compose down
 ```
 
+## Flujo rapido
+
+1. En `Configuracion`, eliges el tipo de salida y pruebas la conexion.
+2. En `Principal`, pegas destinatarios, asunto, cuerpo y adjuntos.
+3. Ajustas el ritmo:
+   - correos por tanda
+   - intervalo en segundos, minutos u horas
+   - envio `De golpe` o `Encolado`
+   - cuanto dura la ventana
+   - si la ventana reinicia automaticamente
+4. Lanzas la cola y revisas `Progreso`, `Agenda` y `Log`.
+
 ## Modos de salida
 
 ### `Gmail key`
 
-Usa tu Gmail y una clave de aplicacion de Google.
+Usa tu Gmail y una clave de aplicacion de Google. La app limpia la clave aunque Google la muestre separada por espacios.
 
 ### `SMTP guiado`
 
-Usa un preset ya preparado para:
+Carga presets para proveedores comunes y reduce lo que tienes que escribir. La idea es que pongas lo minimo y salgas rapido.
+
+Proveedores incluidos:
 
 - Gmail
 - Outlook.com
@@ -65,19 +87,7 @@ Usa un preset ya preparado para:
 
 ### `SMTP manual`
 
-Te deja tocar host, puerto, TLS y usuario cuando tu salida no esta en la lista.
-
-## Flujo de uso
-
-1. En `Configuracion`, eliges el modo de salida y pruebas la conexion.
-2. En `Principal`, pegas destinatarios, asunto, cuerpo y adjuntos.
-3. Defines:
-   - correos por tanda
-   - cada cuantos segundos o minutos
-   - si sale `De golpe` o `Encolado`
-   - cuanto dura la ventana
-   - si quieres que reinicie otra ventana igual al terminar
-4. Lanzas la cola y revisas `Progreso`, `Agenda` y `Log`.
+Te deja controlar `host`, `puerto`, `TLS` y `usuario` cuando tu proveedor no esta en la lista o necesitas una configuracion propia.
 
 ## Stack
 
@@ -97,14 +107,15 @@ npm start
 ## Estructura
 
 ```text
-public/         interfaz retro
-server.js       backend y logica de cola
-storage/        config local y adjuntos temporales
-docker-compose.yml
+public/              interfaz retro y logica del frontend
+docs/images/         capturas para GitHub
+server.js            backend, validaciones y logica de cola
+storage/             configuracion local y adjuntos temporales
 Dockerfile
+docker-compose.yml
 ```
 
-## Validacion usada
+## Validado con
 
 - `node --check server.js`
 - `node --check public/app.js`
@@ -114,11 +125,11 @@ Dockerfile
 
 MasivoMail envia desde tu propia cuenta y tu propia salida SMTP.
 
-No incluye:
+No intenta:
 
-- ocultacion de identidad
-- evasiones de filtros
-- proxies raros
-- automatismos para saltarse limites del proveedor
+- ocultar identidad
+- evadir filtros
+- saltarse limites del proveedor
+- disfrazarse como una plataforma corporativa
 
-La responsabilidad del uso, del volumen y de las credenciales sigue siendo tuya.
+La responsabilidad del uso, del ritmo y de las credenciales sigue siendo tuya.
