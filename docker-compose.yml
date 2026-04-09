@@ -1,0 +1,8 @@
+services:
+  masivomail:
+    build: .
+    container_name: masivomail
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./storage:/app/storage

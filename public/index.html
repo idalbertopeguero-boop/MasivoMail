@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MasivoMail</title>
+    <meta name="theme-color" content="#0f151e">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="shortcut icon" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="scene">
+      <div class="scene-layer stars"></div>
+      <div class="scene-layer dust"></div>
+
+      <main class="pixel-shell">
+        <div class="shell-topline">
+          <div class="shell-topline-left">
+            <div class="power-cluster">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <button type="button" class="easter-stage" id="easter-stage" aria-live="polite" data-i18n-title="shell.stageTitle">
+              <div class="sprite-wrap">
+                <canvas id="sprite-canvas" width="216" height="96" aria-hidden="true"></canvas>
+                <div class="sprite-floor"></div>
+                <div class="sprite-hud">
+                  <span data-i18n="shell.roamers">ROAMERS</span>
+                  <span data-i18n="shell.auto">AUTO</span>
+                </div>
+              </div>
+              <div class="speech-bubble">
+                <span class="cameo-kicker" data-i18n="shell.kicker">PIXEL CAMEO EN VIVO</span>
+                <strong id="cameo-title">Milo Diskette</strong>
+                <small id="cameo-copy">Los cameos rotan solos mientras trabajas.</small>
+              </div>
+            </button>
+          </div>
+          <div class="status-pill" id="status-pill" data-i18n="status.idle">SIN COLA</div>
+        </div>
+
+        <section class="monitor">
+          <div class="monitor-inner">
+            <header class="monitor-header">
+              <div class="brand-copy">
+                <p class="micro-label" data-i18n="hero.micro">TERMINAL DE ENVIO POR LOTES</p>
+                <h1>MasivoMail</h1>
+                <p class="lead" data-i18n="hero.lead">Pixel oscuro, dos pestanas y ritmo real para no disparar la cuenta a ciegas.</p>
+              </div>
+
+              <div class="monitor-actions">
+                <div class="lang-strip" role="group" data-i18n-aria-label="lang.groupLabel">
+                  <button class="tab-button lang-button active" type="button" data-lang="es">ES</button>
+                  <button class="tab-button lang-button" type="button" data-lang="en">EN</button>
+                </div>
+                <div class="tab-strip" role="tablist" data-i18n-aria-label="tabs.ariaLabel">
+                  <button class="tab-button active" data-target="panel-send" role="tab" aria-selected="true" data-i18n="tab.main">Principal</button>
+                  <button class="tab-button" data-target="panel-config" role="tab" aria-selected="false" data-i18n="tab.config">Configuracion</button>
+                  <button class="tab-button guide-button" id="open-tour" type="button" data-i18n="tab.guide" data-i18n-aria-label="tab.guideAria">Guia</button>
+                </div>
+              </div>
+            </header>
+
+            <section class="panel active" id="panel-send" role="tabpanel">
+              <div class="panel-layout">
+                <form id="send-form" class="screen-card form-stack send-form" novalidate>
+                  <div class="section-head">
+                    <div>
+                        <p class="micro-label" data-i18n="send.micro">ENVIO</p>
+                        <h2 data-i18n="send.title">Cola masiva con cadencia.</h2>
+                    </div>
+                    <p class="section-copy" data-i18n="send.copy">Carga destinatarios, define tandas y deja que la cola vaya dosificando.</p>
+                  </div>
+
+                  <div class="send-overview">
+                    <section class="overview-card">
+                      <p class="micro-label" data-i18n="status.micro">CONEXION ACTIVA</p>
+                      <div class="stat-grid summary-grid">
+                        <div><span data-i18n="status.mode">Modo</span><strong id="status-mode">-</strong></div>
+                        <div><span data-i18n="status.provider">Proveedor</span><strong id="status-provider">-</strong></div>
+                        <div><span data-i18n="status.tls">TLS</span><strong id="status-tls">-</strong></div>
+                        <div><span data-i18n="status.sender">Remitente</span><strong id="status-sender">-</strong></div>
+                      </div>
+                    </section>
+
+                    <section class="overview-card" id="tour-guardrail">
+                      <p class="micro-label" data-i18n="guardrail.micro">GUARDRAIL</p>
+                      <p class="mini-copy" id="guardrail-copy" data-i18n="guardrail.default">Carga la configuracion para ver un ritmo responsable.</p>
+                      <div class="rule-list compact-rules" id="guardrail-list"></div>
+                    </section>
+                  </div>
+
+                  <label class="field field-wide recipients-field" id="tour-recipients">
+                    <span data-i18n="send.recipients">Destinatarios</span>
+                    <textarea id="recipients" name="recipients" rows="5" data-i18n-placeholder="send.recipientsPlaceholder" placeholder="Aqui van los correos a los que quieres escribir&#10;uno@correo.com&#10;dos@correo.com"></textarea>
+                    <div class="field-meta">
+                      <small id="recipient-count" data-i18n="send.recipientCountDefault">0 destinatarios validos</small>
+                      <small id="pace-preview" data-i18n="send.paceDefault">Sin cadencia definida</small>
+                    </div>
+                  </label>
+
+                  <label class="field field-wide subject-field" id="tour-subject">
+                    <span data-i18n="send.subject">Asunto</span>
+                    <input id="subject" name="subject" type="text" data-i18n-placeholder="send.subjectPlaceholder" placeholder="Aqui va el asunto que vera la otra persona">
+                  </label>
+
+                  <div class="field-row field-row-compact cadence-row" id="tour-cadence">
+                    <label class="field">
+                      <span data-i18n="send.batchSize">Lote</span>
+                      <input id="batchSize" name="batchSize" type="number" min="1" step="1" value="10">
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="send.each">Cada</span>
+                      <input id="intervalValue" name="intervalValue" type="number" min="1" step="1" value="10">
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="send.unit">Unidad</span>
+                      <select id="intervalUnit" name="intervalUnit">
+                        <option value="minutes" data-i18n="send.unitMinutes">Minutos</option>
+                        <option value="seconds" data-i18n="send.unitSeconds">Segundos</option>
+                      </select>
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="send.mode">Modo de lote</span>
+                      <select id="deliveryMode" name="deliveryMode">
+                        <option value="burst" data-i18n="send.modeBurst">De golpe</option>
+                        <option value="staggered" data-i18n="send.modeStaggered">Escalonado</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="field-row window-row" id="tour-window">
+                    <label class="field">
+                      <span data-i18n="send.window">Durante</span>
+                      <input id="windowValue" name="windowValue" type="number" min="1" step="1" value="2">
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="send.windowUnit">Unidad</span>
+                      <select id="windowUnit" name="windowUnit">
+                        <option value="hours" data-i18n="send.windowHours">Horas</option>
+                        <option value="minutes" data-i18n="send.windowMinutes">Minutos</option>
+                      </select>
+                    </label>
+
+                    <label class="toggle-row toggle-inline repeat-inline">
+                      <input id="repeatWindow" name="repeatWindow" type="checkbox" value="true">
+                      <span class="toggle-box"></span>
+                      <span class="toggle-copy">
+                        <strong data-i18n="send.repeatWindow">Reiniciar al terminar</strong>
+                        <small data-i18n="send.repeatWindowCopy">Cuando se acabe la ventana, arranca otra igual.</small>
+                      </span>
+                    </label>
+                  </div>
+
+                  <label class="toggle-row toggle-inline" id="tour-ramp">
+                    <input id="rampUp" name="rampUp" type="checkbox" value="true" checked>
+                    <span class="toggle-box"></span>
+                    <span class="toggle-copy">
+                      <strong data-i18n="send.rampTitle">Rampa suave</strong>
+                      <small data-i18n="send.rampCopy">Los dos primeros lotes salen mas cortos para evitar un arranque brusco.</small>
+                    </span>
+                  </label>
+
+                  <label class="field field-wide body-field">
+                    <span data-i18n="send.body">Cuerpo del correo</span>
+                    <textarea id="body" name="body" rows="7" data-i18n-placeholder="send.bodyPlaceholder" placeholder="Aqui va el mensaje que quieres mandar."></textarea>
+                  </label>
+
+                  <div class="field field-wide attachments-field">
+                    <span data-i18n="send.attachments">Adjuntos</span>
+                    <input id="attachments" name="attachments" type="file" accept="image/*,application/pdf" multiple hidden>
+                    <div class="file-line">
+                      <button type="button" class="pixel-button secondary-button" id="pick-files" data-i18n="send.attachButton">Adjuntar PNG / PDF</button>
+                      <small id="attachment-count" data-i18n="send.attachEmpty">Sin adjuntos</small>
+                    </div>
+                  </div>
+
+                  <div class="action-line">
+                    <button type="submit" class="pixel-button" id="start-campaign" data-i18n="send.start">Iniciar cola</button>
+                    <button type="button" class="pixel-button ghost-button" id="stop-campaign" data-i18n="send.stop">Detener cola</button>
+                  </div>
+                </form>
+
+                <aside class="side-stack">
+                  <section class="screen-card mini-card" id="tour-progress">
+                    <p class="micro-label" data-i18n="progress.micro">PROGRESO</p>
+                    <div class="progress-box">
+                      <div class="progress-bar"><span id="progress-fill"></span></div>
+                      <div class="stat-grid">
+                        <div><span data-i18n="progress.total">Total</span><strong id="summary-total">0</strong></div>
+                        <div><span data-i18n="progress.pending">Pendientes</span><strong id="summary-pending">0</strong></div>
+                        <div><span data-i18n="progress.sent">OK</span><strong id="summary-delivered">0</strong></div>
+                        <div><span data-i18n="progress.failed">Fallos</span><strong id="summary-failed">0</strong></div>
+                      </div>
+                      <p class="mini-copy" id="campaign-timing" data-i18n="progress.idle">Sin cola activa.</p>
+                    </div>
+                  </section>
+
+                  <section class="screen-card mini-card">
+                    <p class="micro-label" data-i18n="schedule.micro">AGENDA</p>
+                    <div class="schedule-box" id="schedule-box" data-i18n="schedule.empty">Sin agenda todavia.</div>
+                  </section>
+
+                  <section class="screen-card mini-card">
+                    <p class="micro-label" data-i18n="log.micro">LOG</p>
+                    <div class="log-box" id="log-box" data-i18n="log.empty">Sin eventos todavia.</div>
+                  </section>
+                </aside>
+              </div>
+            </section>
+
+            <section class="panel" id="panel-config" role="tabpanel">
+              <div class="panel-layout panel-layout-config">
+                <form id="config-form" class="screen-card form-stack" novalidate>
+                  <div class="section-head">
+                    <div>
+                        <p class="micro-label" data-i18n="config.micro">CONFIG</p>
+                        <h2 data-i18n="config.title">Salida y proveedor bien amarrados.</h2>
+                    </div>
+                    <p class="section-copy" data-i18n="config.copy">El modo manda la logica. Si eliges preset, el host y TLS quedan coherentes con ese proveedor.</p>
+                  </div>
+
+                  <div class="mode-strip" id="mode-strip">
+                    <button type="button" class="mode-chip active" data-mode="gmail_app_password" data-i18n="config.modeGmail">Gmail key</button>
+                    <button type="button" class="mode-chip" data-mode="smtp_preset" data-i18n="config.modePreset">SMTP preset</button>
+                    <button type="button" class="mode-chip" data-mode="smtp_custom" data-i18n="config.modeManual">SMTP manual</button>
+                  </div>
+                  <input id="connectionMode" name="connectionMode" type="hidden" value="gmail_app_password">
+
+                  <section class="mode-context">
+                    <div class="mode-context-head">
+                      <div>
+                        <p class="micro-label" data-i18n="profile.micro">PERFIL</p>
+                        <h3 id="profile-title" class="profile-card-title" data-i18n="profile.defaultTitle">Gmail + clave app</h3>
+                      </div>
+                      <a class="doc-link" id="profile-docs" href="#" target="_blank" rel="noreferrer" data-i18n="profile.docs">Abrir documentacion oficial</a>
+                    </div>
+                    <p class="mini-copy" id="profile-hint" data-i18n="profile.defaultHint">Selecciona un modo para ver sus reglas.</p>
+                    <div class="mode-context-grid">
+                      <div class="provider-lines" id="profile-lines"></div>
+                      <div class="rule-list" id="profile-notes"></div>
+                    </div>
+                    <p class="mini-copy mode-summary-line" id="current-config-summary" data-i18n="profile.currentEmpty">Aun no hay una configuracion confirmada.</p>
+                  </section>
+
+                  <label class="field" id="provider-field">
+                    <span data-i18n="config.provider">Proveedor</span>
+                    <select id="providerKey" name="providerKey"></select>
+                  </label>
+
+                  <div class="field-row">
+                    <label class="field">
+                      <span data-i18n="config.fromName">Nombre remitente</span>
+                      <input id="fromName" name="fromName" type="text" data-i18n-placeholder="config.fromNamePlaceholder" placeholder="Aqui va el nombre que quieres mostrar">
+                    </label>
+
+                    <label class="field">
+                      <span id="from-email-label" data-i18n="config.fromEmail">Correo saliente</span>
+                      <input id="fromEmail" name="fromEmail" type="email" data-i18n-placeholder="config.fromEmailPlaceholder" placeholder="Aqui va el correo desde el que quieres enviar">
+                    </label>
+                  </div>
+
+                  <div class="field-row" id="auth-row">
+                    <label class="field" id="user-field">
+                      <span data-i18n="config.user">Usuario</span>
+                      <input id="user" name="user" type="text" data-i18n-placeholder="config.userPlaceholder" placeholder="Aqui va tu usuario o tu correo">
+                    </label>
+
+                    <label class="field">
+                      <span id="secret-label" data-i18n="config.secret">Clave</span>
+                      <input id="secret" name="secret" type="password" data-i18n-placeholder="config.secretPlaceholder" placeholder="Si no la vas a cambiar, dejalo vacio">
+                      <small id="secret-hint" data-i18n="config.secretMissing">Sin clave guardada.</small>
+                    </label>
+                  </div>
+
+                  <div class="field-row field-row-compact" id="network-row">
+                    <label class="field">
+                      <span data-i18n="config.host">Host SMTP</span>
+                      <input id="host" name="host" type="text" data-i18n-placeholder="config.hostPlaceholder" placeholder="Aqui va el servidor SMTP, por ejemplo smtp.tudominio.com">
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="config.port">Puerto</span>
+                      <input id="port" name="port" type="number" min="1" step="1" placeholder="587">
+                    </label>
+
+                    <label class="field">
+                      <span data-i18n="config.tls">TLS</span>
+                      <select id="tlsMode" name="tlsMode">
+                        <option value="ssl">SSL</option>
+                        <option value="starttls">STARTTLS</option>
+                        <option value="none" data-i18n="config.none">Ninguno</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="action-line" id="tour-config-actions">
+                    <button type="submit" class="pixel-button" data-i18n="config.save">Guardar</button>
+                    <button type="button" class="pixel-button secondary-button" id="test-config" data-i18n="config.test">Probar conexion</button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <footer class="monitor-footer">
+              <div class="feedback-box" id="feedback-box" data-i18n="feedback.waiting">Esperando acciones.</div>
+              <div class="scanner"><span></span></div>
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="tour-overlay" id="tour-overlay" hidden>
+      <div class="tour-beam" id="tour-beam"></div>
+      <section class="tour-panel">
+        <div class="tour-arrow" id="tour-arrow"></div>
+        <div class="tour-top">
+          <p class="micro-label" data-i18n="tour.micro">ONBOARDING</p>
+          <button type="button" class="tour-close" id="tour-close" data-i18n-aria-label="tour.closeAria">X</button>
+        </div>
+        <div class="tour-hero">
+          <div class="tour-avatar-shell">
+            <canvas id="tour-avatar" width="88" height="88" aria-hidden="true"></canvas>
+            <span class="tour-avatar-tag" id="tour-avatar-tag">Vera Byte</span>
+          </div>
+          <div class="tour-copy">
+            <h3 id="tour-title" data-i18n="tour.defaultTitle">Bienvenido</h3>
+            <p id="tour-body" data-i18n="tour.defaultBody">La guia te muestra la app sin saturarte.</p>
+          </div>
+        </div>
+        <div class="tour-points" id="tour-points"></div>
+        <div class="tour-progress" id="tour-progress"></div>
+        <div class="tour-actions">
+          <button type="button" class="pixel-button ghost-button" id="tour-skip" data-i18n="tour.skip">Cerrar</button>
+          <button type="button" class="pixel-button secondary-button" id="tour-prev" data-i18n="tour.prev">Atras</button>
+          <button type="button" class="pixel-button" id="tour-next" data-i18n="tour.next">Siguiente</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>
